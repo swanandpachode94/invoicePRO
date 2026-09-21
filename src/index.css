@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased;
+  font-size: 16px;
+}
+
+/* Minimum comfortable tap target for budget Android devices */
+button,
+a,
+input,
+select {
+  min-height: 44px;
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  min-height: 0;
+}

@@ -1,0 +1,43 @@
+# Secrets / env
+.env
+.env.local
+.env.*.local
+CREDENTIALS.md
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-ssr/
+build/
+
+# PWA generated
+dev-dist/
+**/sw.js
+**/workbox-*.js
+
+# Supabase local
+.supabase/
+supabase/.branches/
+supabase/.temp/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+coverage/
