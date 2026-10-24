@@ -1,11 +1,12 @@
+import type { User } from '@supabase/supabase-js'
+
 const KEY = 'invoicepro-pending-phone'
 
 /**
- * The phone+email OTP step collects a phone number, but Supabase's email OTP
- * only sets auth.users.email — the phone never reaches the auth user. This
- * carries the typed value across the swap from the auth step to the
- * registration-details form (a full remount, not a re-render, so component
- * state alone won't survive it).
+ * Same-device backup for the mobile number typed at signup. The primary copy
+ * rides on the new auth user's metadata (EmailLinkStep passes it to
+ * signInWithOtp), but Supabase only writes that for a brand-new user — someone
+ * restarting an abandoned signup relies on this instead.
  */
 export function savePendingPhone(phone: string) {
   try {
@@ -15,7 +16,7 @@ export function savePendingPhone(phone: string) {
   }
 }
 
-export function consumePendingPhone(): string {
+function consumePendingPhone(): string {
   try {
     const value = sessionStorage.getItem(KEY) ?? ''
     sessionStorage.removeItem(KEY)
@@ -23,4 +24,17 @@ export function consumePendingPhone(): string {
   } catch {
     return ''
   }
+}
+
+/**
+ * The 10-digit mobile number entered at signup, wherever it ended up: user
+ * metadata (survives opening the email link on another device), a phone-auth
+ * user's own number, or this tab's sessionStorage. Empty for Google signups,
+ * which never asked for one.
+ */
+export function phoneFromSignup(user: User): string {
+  const fromMetadata = user.user_metadata?.phone
+  if (typeof fromMetadata === 'string' && fromMetadata) return fromMetadata
+  if (user.phone) return user.phone.replace(/^\+?91/, '')
+  return consumePendingPhone()
 }

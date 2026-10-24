@@ -6,7 +6,9 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist', 'dev-dist'] },
+  // supabase/functions runs on Deno (its own runtime/globals, own linting
+  // story), not part of the Vite frontend this config is for.
+  { ignores: ['dist', 'dev-dist', 'supabase/functions'] },
   js.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],

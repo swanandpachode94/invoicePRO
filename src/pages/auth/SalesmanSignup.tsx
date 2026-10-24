@@ -7,7 +7,7 @@ import type { User } from '@supabase/supabase-js'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { salesmanSignupSchema, type SalesmanSignupInput } from '@/lib/validation'
-import { consumePendingPhone } from '@/lib/pendingPhone'
+import { phoneFromSignup } from '@/lib/pendingPhone'
 import { AuthShell } from '@/components/auth/AuthShell'
 import { AuthMethodChooser } from '@/components/auth/AuthMethodChooser'
 import { Button } from '@/components/common/Button'
@@ -45,13 +45,10 @@ export function SalesmanSignup() {
  * mount and ignores later changes to the option.
  */
 function SalesmanDetailsForm({ user }: { user: User }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
-
-  // Phone+email-OTP signups typed a phone during that step (carried across via
-  // sessionStorage, since email-OTP auth never sets it on the auth user itself).
-  // Google/plain email+password signups have neither — an empty, editable field.
-  const [phonePrefill] = useState(() => consumePendingPhone())
+  const [phonePrefill] = useState(() => phoneFromSignup(user))
 
   const {
     register,
@@ -84,7 +81,8 @@ function SalesmanDetailsForm({ user }: { user: User }) {
     })
 
     if (error) {
-      setServerError(error.message)
+      // Unique constraint on salesmen.phone — this number is already registered.
+      setServerError(error.code === '23505' ? t('auth.phoneAlreadyRegistered') : error.message)
       return
     }
     navigate('/pending-approval', { replace: true })
@@ -98,7 +96,17 @@ function SalesmanDetailsForm({ user }: { user: User }) {
     >
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <Input label="Your full name" {...register('name')} error={errors.name?.message} />
-        <Input label="Mobile number" {...register('phone')} error={errors.phone?.message} />
+        <Input
+          label={t('auth.mobileNumber')}
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel-national"
+          maxLength={10}
+          readOnly={!!phonePrefill}
+          className={phonePrefill ? 'bg-slate-50 text-slate-500' : ''}
+          {...register('phone')}
+          error={errors.phone?.message}
+        />
         <Input
           label="Vendor code"
           placeholder="VEN-XXXX"

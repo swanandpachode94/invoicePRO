@@ -7,7 +7,7 @@ import type { User } from '@supabase/supabase-js'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { vendorSignupSchema, type VendorSignupInput, indianStates } from '@/lib/validation'
-import { consumePendingPhone } from '@/lib/pendingPhone'
+import { phoneFromSignup } from '@/lib/pendingPhone'
 import { AuthShell } from '@/components/auth/AuthShell'
 import { AuthMethodChooser } from '@/components/auth/AuthMethodChooser'
 import { Button } from '@/components/common/Button'
@@ -42,15 +42,15 @@ export function VendorSignup() {
 
 /**
  * Only mounted once `user` is settled, so its one-time `defaultValues` (the
- * phone pre-fill from the phone+email-OTP step, carried via sessionStorage)
- * capture the real value instead of running before the profile finished
- * loading — react-hook-form reads defaultValues once at mount and ignores
- * later changes to the option.
+ * phone pre-fill) capture the real value instead of running before the
+ * profile finished loading — react-hook-form reads defaultValues once at
+ * mount and ignores later changes to the option.
  */
 function VendorDetailsForm({ user }: { user: User }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [serverError, setServerError] = useState<string | null>(null)
-  const [phonePrefill] = useState(() => consumePendingPhone())
+  const [phonePrefill] = useState(() => phoneFromSignup(user))
 
   const {
     register,
@@ -67,14 +67,16 @@ function VendorDetailsForm({ user }: { user: User }) {
     const { error } = await supabase.from('vendors').insert({
       auth_user_id: user.id,
       business_name: values.business_name,
-      phone: values.phone || null,
+      phone: `+91${values.phone}`,
       gstin: values.gstin || null,
       state: values.state,
       address: values.address || null,
     })
 
     if (error) {
-      setServerError(error.message)
+      // Unique-index hit on vendors.phone — someone registered this number in
+      // between the pre-signup check and now.
+      setServerError(error.code === '23505' ? t('auth.phoneAlreadyRegistered') : error.message)
       return
     }
     navigate('/vendor', { replace: true })
@@ -88,7 +90,17 @@ function VendorDetailsForm({ user }: { user: User }) {
     >
       <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
         <Input label="Business name" {...register('business_name')} error={errors.business_name?.message} />
-        <Input label="Phone (optional)" {...register('phone')} error={errors.phone?.message} />
+        <Input
+          label={t('auth.mobileNumber')}
+          type="tel"
+          inputMode="numeric"
+          autoComplete="tel-national"
+          maxLength={10}
+          readOnly={!!phonePrefill}
+          className={phonePrefill ? 'bg-slate-50 text-slate-500' : ''}
+          {...register('phone')}
+          error={errors.phone?.message}
+        />
         <Input label="GSTIN (optional)" {...register('gstin')} error={errors.gstin?.message} />
         <Select label="State" defaultValue="" {...register('state')} error={errors.state?.message}>
           <option value="" disabled>

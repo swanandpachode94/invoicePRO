@@ -233,6 +233,20 @@ export function useUpdateVendorSettings() {
   })
 }
 
+export function useReopenCancellation() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc('reopen_cancellation', { p_cancellation_id: id })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['cancellations'] })
+      qc.invalidateQueries({ queryKey: ['vendor-invoices'] })
+    },
+  })
+}
+
 export function useReviewCancellation() {
   const qc = useQueryClient()
   return useMutation({

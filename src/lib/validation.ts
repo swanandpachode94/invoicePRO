@@ -14,18 +14,16 @@ export const otpSchema = z
 const emailSchema = z.string().trim().email('Enter a valid email address')
 
 // Signup: phone gets attached to the account being created. Login: the phone
-// is already on file from signup, so only the email (used to find/verify the
-// account and receive the OTP) is asked for.
-export const signupEmailOtpSchema = z.object({
+// is already on file from signup, so only the email (used to find the account
+// and receive the verification link) is asked for.
+export const signupEmailSchema = z.object({
   phone: phoneSchema,
   email: emailSchema,
 })
-export type SignupEmailOtpInput = z.infer<typeof signupEmailOtpSchema>
 
-export const loginEmailOtpSchema = z.object({
+export const loginEmailSchema = z.object({
   email: emailSchema,
 })
-export type LoginEmailOtpInput = z.infer<typeof loginEmailOtpSchema>
 
 export const indianStates = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat',
@@ -37,7 +35,7 @@ export const indianStates = [
 
 export const vendorSignupSchema = z.object({
   business_name: z.string().trim().min(2, 'Business name is required'),
-  phone: z.string().trim().optional().or(z.literal('')),
+  phone: phoneSchema,
   gstin: z.string().trim().optional().or(z.literal('')),
   state: z.string().min(1, 'Select a state'),
   address: z.string().trim().optional().or(z.literal('')),
@@ -47,9 +45,6 @@ export type VendorSignupInput = z.infer<typeof vendorSignupSchema>
 export const salesmanSignupSchema = z.object({
   name: z.string().trim().min(2, 'Name is required'),
   vendor_code: z.string().trim().min(4, 'Enter the vendor code your distributor gave you'),
-  // Guaranteed by the auth method itself for phone/OTP signups (pre-filled,
-  // read-only there); collected here as a plain field for email/Google
-  // signups, which have no phone from auth.
   phone: phoneSchema,
 })
 export type SalesmanSignupInput = z.infer<typeof salesmanSignupSchema>

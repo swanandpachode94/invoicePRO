@@ -16,7 +16,13 @@ import { Input } from '@/components/common/Input'
  * `useAuth().user` instead (the pattern Google/email-confirmation need anyway,
  * since those involve a page reload that would lose a local callback's state).
  */
-export function PhoneOtpStep({ onVerified }: { onVerified?: (phone: string) => void }) {
+export function PhoneOtpStep({
+  mode,
+  onVerified,
+}: {
+  mode: 'login' | 'signup'
+  onVerified?: (phone: string) => void
+}) {
   const { t } = useTranslation()
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
   const [phone, setPhone] = useState('')
@@ -32,7 +38,12 @@ export function PhoneOtpStep({ onVerified }: { onVerified?: (phone: string) => v
     }
     setLoading(true)
     setError(null)
-    const { error } = await supabase.auth.signInWithOtp({ phone: `+91${parsed.data}` })
+    const { error } = await supabase.auth.signInWithOtp({
+      phone: `+91${parsed.data}`,
+      // Login shouldn't silently create a brand-new account for a number
+      // that was never signed up — only signup is allowed to create one.
+      options: { shouldCreateUser: mode === 'signup' },
+    })
     setLoading(false)
     if (error) {
       setError(error.message)
